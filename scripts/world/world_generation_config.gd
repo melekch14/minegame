@@ -37,6 +37,10 @@ extends Resource
 @export var tree_far_distance: float = 150.0
 ## Voxel size (m) of those far stand-ins. Larger = fewer triangles, coarser silhouette.
 @export_range(0.5, 3.0, 0.1) var far_tree_voxel_size: float = 1.0
+## Camera distance (m) where trees fade out entirely (dithered over tree_fade_margin). Keep it
+## inside the fog: thousands of tiny distant trees cost more than their few pixels are worth.
+@export var tree_view_distance: float = 330.0
+@export var tree_fade_margin: float = 50.0
 ## Camera distance (m) up to which small rocks are drawn.
 @export var small_rock_view_distance: float = 70.0
 ## Hysteresis around the switch distances (m).

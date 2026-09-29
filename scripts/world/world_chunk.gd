@@ -8,9 +8,13 @@ extends Node3D
 ##     Water LOD quads           -> same
 ##     Blocks / slope / water    -> MultiMesh of the real Blender assets, visible up close (NEAR)
 ##     Trees                     -> full trees up close, decimated trees beyond, voxel
-##                                  stand-ins beyond tree_far_distance
+##                                  stand-ins beyond tree_far_distance, faded out at
+##                                  tree_view_distance
 ##     Rocks
 ##   Collision (StaticBody3D, NEAR only)
+
+## Vertical offset of the Backing (shadow-only copy of the merged mesh) below the block tops.
+const BACKING_OFFSET := -0.18
 
 var coord: Vector2i
 var lod: int = -1
@@ -50,15 +54,15 @@ func apply(res: Dictionary, lib: WorldAssetLibrary, cfg: WorldGenerationConfig) 
 			# than dd). One distance test per section => the two can never both be hidden.
 			_set_range(lod_mesh, dd, 0.0, m)
 			_set_range(water_lod, dd, 0.0, m)
-			# Backing: the bevelled Blender blocks leave pin-holes where four corners meet.
-			# A copy of the merged mesh slightly below the block tops fills them with ground.
-			# It is also the terrain's shadow caster up close: the blocks themselves (hundreds
-			# to thousands of triangles each) don't cast shadows.
+			# Backing: the terrain's shadow caster up close (the blocks themselves don't cast
+			# shadows). Shadow-only: drawn on screen, its walls would lie in the same planes as
+			# the flat baked block sides and z-fight with them. Slightly lowered so block tops
+			# don't pick up shadow acne from it.
 			var backing := MeshInstance3D.new()
 			backing.name = "Backing"
 			backing.mesh = lod_mesh.mesh
-			backing.position = Vector3(0.0, -0.18, 0.0)
-			backing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			backing.position = Vector3(0.0, BACKING_OFFSET, 0.0)
+			backing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 			s.add_child(backing)
 			backing.visibility_parent = backing.get_path_to(lod_mesh)
 		var inst: Dictionary = sec.instances
@@ -73,7 +77,9 @@ func apply(res: Dictionary, lib: WorldAssetLibrary, cfg: WorldGenerationConfig) 
 			if mmi == null:
 				continue
 			if is_far_tree:
-				_set_range(mmi, fd, 0.0, m)
+				_set_range(mmi, fd, cfg.tree_view_distance, m)
+				mmi.visibility_range_end_margin = cfg.tree_fade_margin
+				mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			elif key.begins_with("tree") and key.ends_with("_lod"):
 				_set_range(mmi, td if near else 0.0, fd, m)
 			elif not near:

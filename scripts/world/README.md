@@ -84,5 +84,9 @@ matches the 2 m terrain grid. The shaders in `shaders/` rebuild the Blender voxe
 
 - `scripts/world/debug/world_map_preview.gd`: headless top-down map + biome statistics:
   `godot --headless --path . --script res://scripts/world/debug/world_map_preview.gd -- <seed> <radius>`
+- `scripts/world/debug/geometry_check.gd`: headless check of the generated geometry for faces
+  pointing the wrong way and for coplanar overlapping faces that z-fight (flickering blocks).
+  Exits with code 1 when it finds issues:
+  `godot --headless --path . --script res://scripts/world/debug/geometry_check.gd -- <radius> [chunk_x chunk_z]`
 - `scenes/world/debug/WorldPreview.tscn`: flies through fixed viewpoints and saves screenshots
   plus fps/draw-call stats to `_preview/`.
