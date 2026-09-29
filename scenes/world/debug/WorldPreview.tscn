@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/debug/world_preview_capture.gd" id="1_cap"]
+[ext_resource type="PackedScene" path="res://scenes/world/World.tscn" id="2_world"]
+
+[node name="WorldPreview" type="Node3D"]
+script = ExtResource("1_cap")
+
+[node name="World" parent="." instance=ExtResource("2_world")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 70.0
+far = 2000.0

@@ -1,0 +1,134 @@
+{
+ "01_grass_block": [
+  "MAT_Terrain_Grass",
+  "MAT_Terrain_Dirt",
+  "MAT_Terrain_Dirt_Dark"
+ ],
+ "02_dirt_block": [
+  "MAT_Terrain_Dirt",
+  "MAT_Terrain_Dirt_Dark",
+  "MAT_Terrain_Soil_Detail"
+ ],
+ "03_stone_block": [
+  "MAT_Terrain_Stone",
+  "MAT_Terrain_Stone_Dark",
+  "MAT_Terrain_Stone_Light"
+ ],
+ "04_sand_block": [
+  "MAT_Terrain_Sand",
+  "MAT_Terrain_Sand_Dark"
+ ],
+ "06_grass_slope": [
+  "MAT_Terrain_Grass",
+  "MAT_Terrain_Dirt",
+  "MAT_Terrain_Dirt_Dark"
+ ],
+ "07_rock_large": [
+  "MAT_Environment_Rock"
+ ],
+ "08_rock_small_a": [
+  "MAT_Environment_Rock"
+ ],
+ "08_rock_small_b": [
+  "MAT_Environment_Rock"
+ ],
+ "08_rock_small_c": [
+  "MAT_Environment_Rock"
+ ],
+ "09_tree_large_a": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "09_tree_large_a_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "09_tree_large_b": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "09_tree_large_b_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "09_tree_large_c": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "09_tree_large_c_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_a": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_a_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_b": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_b_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_c": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ],
+ "10_tree_small_c_lod": [
+  "MAT_Tree_Bark",
+  "MAT_Tree_Bark_Dark",
+  "MAT_Tree_Bark_Light",
+  "MAT_Tree_Leaves",
+  "MAT_Tree_Leaves_Dark",
+  "MAT_Tree_Leaves_Light"
+ ]
+}

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WorldGenerationConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_generation_config.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+world_seed = 12345
+chunk_size = 32
+active_chunk_radius = 7
+detail_chunk_radius = 2
+water_level = 3
+terrain_height_scale = 1.0
+terrain_noise_scale = 1.0
+forest_density = 0.9
+grassland_density = 0.1
+tree_density = 1.0
+rock_density = 1.0
+large_tree_probability = 0.55
+small_tree_probability = 0.45

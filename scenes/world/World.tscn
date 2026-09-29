@@ -1,0 +1,74 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="Resource" path="res://resources/world/world_generation_config.tres" id="2_cfg"]
+[ext_resource type="Script" path="res://scripts/world/world_generator.gd" id="3_gen"]
+[ext_resource type="Script" path="res://scripts/world/chunk_manager.gd" id="4_cm"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.2, 0.4, 0.78, 1)
+sky_horizon_color = Color(0.64, 0.75, 0.87, 1)
+sky_curve = 0.12
+ground_bottom_color = Color(0.62, 0.72, 0.83, 1)
+ground_horizon_color = Color(0.64, 0.75, 0.87, 1)
+ground_curve = 0.5
+sun_angle_max = 25.0
+sun_curve = 0.1
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_energy = 0.9
+reflected_light_source = 2
+tonemap_mode = 4
+tonemap_exposure = 1.05
+ssao_enabled = true
+ssao_radius = 1.6
+ssao_intensity = 1.8
+ssao_power = 1.4
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.04
+fog_enabled = true
+fog_mode = 1
+fog_light_color = Color(0.64, 0.74, 0.86, 1)
+fog_light_energy = 1.0
+fog_sun_scatter = 0.1
+fog_density = 1.0
+fog_aerial_perspective = 0.5
+fog_sky_affect = 0.0
+fog_depth_curve = 2.2
+fog_depth_begin = 170.0
+fog_depth_end = 470.0
+adjustment_enabled = true
+adjustment_contrast = 1.05
+adjustment_saturation = 1.12
+
+[node name="World" type="Node3D"]
+script = ExtResource("1_world")
+config = ExtResource("2_cfg")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-38, 35, 0)
+light_color = Color(1, 0.955, 0.88, 1)
+light_energy = 1.3
+light_angular_distance = 1.2
+shadow_enabled = true
+shadow_blur = 1.4
+directional_shadow_max_distance = 180.0
+directional_shadow_blend_splits = true
+
+[node name="WorldGenerator" type="Node" parent="."]
+script = ExtResource("3_gen")
+
+[node name="ChunkManager" type="Node3D" parent="."]
+script = ExtResource("4_cm")
+
+[node name="Chunks" type="Node3D" parent="."]
