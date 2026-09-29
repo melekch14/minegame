@@ -5,6 +5,8 @@ shader_type spatial;
 // settings. Per material: object-space position snapped to a coarse and a fine grid ->
 // smooth noise mixed with white noise -> colour ramp (linear colours from the .blend).
 // Per-instance variation comes from the instance origin.
+// Baked mode (low-poly terrain blocks, tools/blender/bake_blocks.py): the material index and
+// the surface normal come per texel from textures baked off the detailed block instead.
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
 
 const int MAX_MATS = 6;
@@ -19,6 +21,11 @@ uniform float snap_fine[6];
 uniform float white_mix[6];
 uniform float roughness_mat[6];
 uniform float contrast = 1.7;
+
+uniform bool baked = false;
+uniform sampler2D baked_normal : hint_default_white, filter_linear_mipmap, repeat_disable;  // object-space normal
+uniform sampler2D baked_mat_ao : hint_default_white, filter_nearest, repeat_disable;       // R = (id + 0.5) / 8, G = AO
+uniform float baked_ao_light_affect = 0.5;
 
 varying vec3 v_local;
 varying vec3 v_nrm;
@@ -67,6 +74,14 @@ vec3 ramp(int m, float t) {
 
 void fragment() {
 	int m = v_mat;
+	if (baked) {
+		vec2 mat_ao = texture(baked_mat_ao, UV).rg;
+		m = clamp(int(mat_ao.r * 8.0), 0, MAX_MATS - 1);
+		vec3 n = texture(baked_normal, UV).rgb * 2.0 - 1.0;
+		NORMAL = normalize((VIEW_MATRIX * (MODEL_MATRIX * vec4(n, 0.0))).xyz);
+		AO = mat_ao.g;
+		AO_LIGHT_AFFECT = baked_ao_light_affect;
+	}
 	// Nudge inward so faces lying exactly on a snap boundary don't flicker.
 	vec3 p = v_local - v_nrm * 0.01 + fract(v_seed * 0.1371) * 13.0;
 	float sc = snap_coarse[m];

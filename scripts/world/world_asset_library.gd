@@ -5,6 +5,9 @@ extends RefCounted
 ## One Mesh per asset key is shared by every MultiMesh in the world.
 
 const MODEL_DIR := "res://assets/models/"
+## Low-poly blocks with baked normal / material textures (tools/blender/bake_blocks.py).
+## Used instead of the detailed block of the same name when present.
+const BAKED_DIR := "res://assets/models/baked/"
 const VOXEL_SHADER := preload("res://shaders/voxel_ramp.gdshader")
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const LOD_SHADER := preload("res://shaders/terrain_lod.gdshader")
@@ -65,7 +68,8 @@ var _material_ids: Dictionary = {}
 var missing: PackedStringArray = []
 
 
-func load_all() -> bool:
+## `cfg` supplies far_tree_voxel_size for the generated `tree_*_far` stand-ins.
+func load_all(cfg: WorldGenerationConfig = null) -> bool:
 	water_material = ShaderMaterial.new()
 	water_material.shader = WATER_SHADER
 	lod_material = ShaderMaterial.new()
@@ -77,7 +81,8 @@ func load_all() -> bool:
 	else:
 		push_error("WorldAssetLibrary: missing %smaterial_ids.json (re-export the assets)" % MODEL_DIR)
 	for key in ASSETS:
-		var path: String = MODEL_DIR + ASSETS[key] + ".glb"
+		var baked := ResourceLoader.exists(BAKED_DIR + ASSETS[key] + ".glb")
+		var path: String = (BAKED_DIR if baked else MODEL_DIR) + ASSETS[key] + ".glb"
 		if not ResourceLoader.exists(path):
 			missing.append(path)
 			continue
@@ -89,9 +94,16 @@ func load_all() -> bool:
 			missing.append(path)
 			continue
 		var mesh: Mesh = found.mesh
-		_apply_materials(mesh, key)
+		_apply_materials(mesh, key, baked)
 		meshes[key] = mesh
 		mesh_offsets[key] = found.xform
+	# Very distant trees: blocky voxel versions of the decimated trees (a few hundred triangles).
+	var voxel := cfg.far_tree_voxel_size if cfg else 1.0
+	for key in ASSETS:
+		if key.begins_with("tree") and key.ends_with("_lod") and meshes.has(key):
+			var far_key: String = key.trim_suffix("_lod") + "_far"
+			meshes[far_key] = build_voxel_proxy(meshes[key], voxel)
+			mesh_offsets[far_key] = mesh_offsets[key]
 	if not missing.is_empty():
 		push_error("WorldAssetLibrary: missing assets %s" % [missing])
 	return missing.is_empty()
@@ -145,6 +157,103 @@ func _fill_ramp_params(m: ShaderMaterial, names: Array) -> void:
 	m.set_shader_parameter("roughness_mat", rough)
 
 
+## Voxelises `src` on a `voxel`-metre grid: each voxel touched by the surface takes the
+## material covering most of it (UV.x), enclosed voxels are filled, and only faces toward
+## the outside are emitted. Same material and UV.x convention as `src`.
+static func build_voxel_proxy(src: Mesh, voxel: float) -> ArrayMesh:
+	var a := src.surface_get_arrays(0)
+	var sv: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var suv: PackedVector2Array = a[Mesh.ARRAY_TEX_UV]
+	var sidx = a[Mesh.ARRAY_INDEX]
+	var ids := PackedInt32Array(sidx) if sidx != null else PackedInt32Array(range(sv.size()))
+	var aabb := src.get_aabb()
+	var org := aabb.position
+	var dim := Vector3i((aabb.size / voxel).floor()) + Vector3i.ONE
+	var cells := dim.x * dim.y * dim.z
+	var cell := func(p: Vector3) -> int:
+		var c := Vector3i(((p - org) / voxel).floor()).clamp(Vector3i.ZERO, dim - Vector3i.ONE)
+		return (c.y * dim.z + c.z) * dim.x + c.x
+	# Area-weighted material votes from points sampled at <= voxel / 2 spacing on each triangle.
+	var votes := {}  # cell -> {mat: weight}
+	for t in range(0, ids.size(), 3):
+		var p0 := sv[ids[t]]
+		var p1 := sv[ids[t + 1]]
+		var p2 := sv[ids[t + 2]]
+		var mat := int(suv[ids[t]].x)
+		var n := maxi(1, ceili(maxf(p0.distance_to(p1), maxf(p1.distance_to(p2), p2.distance_to(p0))) / (voxel * 0.5)))
+		var w := (p1 - p0).cross(p2 - p0).length() / float((n + 1) * (n + 2) / 2)
+		for i in n + 1:
+			for j in n + 1 - i:
+				var c: int = cell.call(p0 + (p1 - p0) * (float(i) / n) + (p2 - p0) * (float(j) / n))
+				var v: Dictionary = votes.get_or_add(c, {})
+				v[mat] = v.get(mat, 0.0) + w
+	var solid := PackedInt32Array()
+	solid.resize(cells)
+	solid.fill(-1)
+	for c in votes:
+		var best := -1
+		for m in votes[c]:
+			if best < 0 or votes[c][m] > votes[c][best]:
+				best = m
+		solid[c] = best
+	# Flood the outside from the grid border; empty cells it can't reach are interior.
+	var outside := PackedByteArray()
+	outside.resize(cells)
+	var stack: Array[Vector3i] = []
+	for z in dim.z:
+		for y in dim.y:
+			for x in dim.x:
+				if x == 0 or y == 0 or z == 0 or x == dim.x - 1 or y == dim.y - 1 or z == dim.z - 1:
+					stack.append(Vector3i(x, y, z))
+	const DIRS := [Vector3i.RIGHT, Vector3i.LEFT, Vector3i.UP, Vector3i.DOWN, Vector3i.BACK, Vector3i.FORWARD]
+	while not stack.is_empty():
+		var c: Vector3i = stack.pop_back()
+		var i := (c.y * dim.z + c.z) * dim.x + c.x
+		if outside[i] or solid[i] >= 0:
+			continue
+		outside[i] = 1
+		for d: Vector3i in DIRS:
+			var nc: Vector3i = c + d
+			if nc.x >= 0 and nc.y >= 0 and nc.z >= 0 and nc.x < dim.x and nc.y < dim.y and nc.z < dim.z:
+				stack.append(nc)
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	for y in dim.y:
+		for z in dim.z:
+			for x in dim.x:
+				var mat := solid[(y * dim.z + z) * dim.x + x]
+				if mat < 0:
+					continue
+				var lo := org + Vector3(x, y, z) * voxel
+				for d: Vector3i in DIRS:
+					var nc := Vector3i(x, y, z) + d
+					var inside := nc.x >= 0 and nc.y >= 0 and nc.z >= 0 and nc.x < dim.x and nc.y < dim.y and nc.z < dim.z
+					if inside and not outside[(nc.y * dim.z + nc.z) * dim.x + nc.x]:
+						continue
+					_add_voxel_face(verts, norms, uvs, lo, voxel, Vector3(d), mat)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = norms
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, src.surface_get_material(0))
+	return mesh
+
+
+static func _add_voxel_face(v: PackedVector3Array, n: PackedVector3Array, u: PackedVector2Array,
+		lo: Vector3, s: float, nrm: Vector3, mat: int) -> void:
+	# Face of the cube [lo, lo + s] on the `nrm` side, spanned by the two other axes.
+	var c := lo + Vector3.ONE * s * 0.5 + nrm * s * 0.5
+	var ax := Vector3(nrm.y, nrm.z, nrm.x) * s * 0.5
+	var ay := nrm.cross(ax)
+	var p := [c - ax - ay, c + ax - ay, c + ax + ay, c - ax + ay]
+	ChunkMesher._add_tri(v, n, u, p[0], p[1], p[2], nrm, mat, 0.0)
+	ChunkMesher._add_tri(v, n, u, p[0], p[2], p[3], nrm, mat, 0.0)
+
+
 func _find_mesh(n: Node, parent_xf: Transform3D) -> Dictionary:
 	var xf := parent_xf
 	if n is Node3D:
@@ -163,7 +272,7 @@ static func base_material_name(n: String) -> String:
 	return rx.sub(n, "")
 
 
-func _apply_materials(mesh: Mesh, key: String) -> void:
+func _apply_materials(mesh: Mesh, key: String, baked := false) -> void:
 	if key == "water":
 		for si in mesh.get_surface_count():
 			mesh.surface_set_material(si, water_material)
@@ -181,5 +290,13 @@ func _apply_materials(mesh: Mesh, key: String) -> void:
 		m.resource_name = sig
 		_fill_ramp_params(m, order)
 		_material_cache[sig] = m
+	var mat: ShaderMaterial = _material_cache[sig]
+	if baked:
+		# Same ramps; material index and normal read from this block's baked textures.
+		mat = mat.duplicate()
+		mat.resource_name = ASSETS[key] + " (baked)"
+		mat.set_shader_parameter("baked", true)
+		mat.set_shader_parameter("baked_normal", load(BAKED_DIR + ASSETS[key] + "_normal.png"))
+		mat.set_shader_parameter("baked_mat_ao", load(BAKED_DIR + ASSETS[key] + "_matao.png"))
 	for si in mesh.get_surface_count():
-		mesh.surface_set_material(si, _material_cache[sig])
+		mesh.surface_set_material(si, mat)

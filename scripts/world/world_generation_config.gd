@@ -33,6 +33,10 @@ extends Resource
 @export var detail_view_distance: float = 90.0
 ## Camera distance (m) up to which full-detail trees are shown (decimated trees beyond).
 @export var tree_detail_distance: float = 75.0
+## Camera distance (m) beyond which trees switch from the decimated mesh to a blocky voxel stand-in.
+@export var tree_far_distance: float = 150.0
+## Voxel size (m) of those far stand-ins. Larger = fewer triangles, coarser silhouette.
+@export_range(0.5, 3.0, 0.1) var far_tree_voxel_size: float = 1.0
 ## Camera distance (m) up to which small rocks are drawn.
 @export var small_rock_view_distance: float = 70.0
 ## Hysteresis around the switch distances (m).

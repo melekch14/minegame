@@ -9,7 +9,7 @@ extends RefCounted
 ##   * NEAR chunks additionally carry, per section, MultiMesh buffers of the real Blender
 ##     assets (blocks, slopes, water tiles, rocks, full trees). WorldChunk swaps between the
 ##     two with visibility ranges, so detail follows the camera without regenerating chunks.
-##   * FAR chunks are one section: merged mesh, decimated trees, large rocks.
+##   * FAR chunks are one section: merged mesh, decimated / voxel trees, large rocks.
 ## Collision (NEAR only): triangle soup of block tops, cliff faces and ramps.
 
 enum Lod { FAR, NEAR }
@@ -163,14 +163,16 @@ func _add_props(d: ChunkData, rect: Rect2i, inst: Dictionary, offset: Vector3, l
 				continue
 			xf.origin -= offset
 			if is_tree:
-				# NEAR sections get both the full tree and its LOD (swapped by distance).
+				# NEAR sections get the full tree too; every section gets the decimated tree and
+				# the voxel stand-in (all swapped by distance).
 				if lod == Lod.NEAR:
 					var fb := _buf(inst, key)
 					_push(fb, xf)
 					inst[key] = fb
-				var lb := _buf(inst, key + "_lod")
-				_push(lb, xf)
-				inst[key + "_lod"] = lb
+				for suffix in ["_lod", "_far"]:
+					var lb := _buf(inst, key + suffix)
+					_push(lb, xf)
+					inst[key + suffix] = lb
 			else:
 				var rb := _buf(inst, key)
 				_push(rb, xf)

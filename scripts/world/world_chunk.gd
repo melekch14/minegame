@@ -7,7 +7,8 @@ extends Node3D
 ##     Terrain LOD mesh          -> visible beyond detail_view_distance (always, for FAR chunks)
 ##     Water LOD quads           -> same
 ##     Blocks / slope / water    -> MultiMesh of the real Blender assets, visible up close (NEAR)
-##     Trees                     -> full trees up close, decimated trees beyond
+##     Trees                     -> full trees up close, decimated trees beyond, voxel
+##                                  stand-ins beyond tree_far_distance
 ##     Rocks
 ##   Collision (StaticBody3D, NEAR only)
 
@@ -29,6 +30,7 @@ func apply(res: Dictionary, lib: WorldAssetLibrary, cfg: WorldGenerationConfig) 
 	var near: bool = lod == ChunkMesher.Lod.NEAR
 	var dd := cfg.detail_view_distance
 	var td := cfg.tree_detail_distance
+	var fd := cfg.tree_far_distance
 	var m := cfg.lod_switch_margin
 
 	var idx := 0
@@ -50,11 +52,13 @@ func apply(res: Dictionary, lib: WorldAssetLibrary, cfg: WorldGenerationConfig) 
 			_set_range(water_lod, dd, 0.0, m)
 			# Backing: the bevelled Blender blocks leave pin-holes where four corners meet.
 			# A copy of the merged mesh slightly below the block tops fills them with ground.
+			# It is also the terrain's shadow caster up close: the blocks themselves (hundreds
+			# to thousands of triangles each) don't cast shadows.
 			var backing := MeshInstance3D.new()
 			backing.name = "Backing"
 			backing.mesh = lod_mesh.mesh
 			backing.position = Vector3(0.0, -0.18, 0.0)
-			backing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			backing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 			s.add_child(backing)
 			backing.visibility_parent = backing.get_path_to(lod_mesh)
 		var inst: Dictionary = sec.instances
@@ -63,17 +67,20 @@ func apply(res: Dictionary, lib: WorldAssetLibrary, cfg: WorldGenerationConfig) 
 			if buf.is_empty():
 				continue
 			var is_block: bool = key in ["grass", "dirt", "stone", "sand", "slope", "water"]
-			var shadows: bool = key != "water" and (near or key == "rock_large")
+			var is_far_tree: bool = key.begins_with("tree") and key.ends_with("_far")
+			var shadows: bool = (near and not is_block and not is_far_tree) or key == "rock_large"
 			var mmi := _add_multimesh(s, key, buf, lib, shadows)
 			if mmi == null:
 				continue
-			if not near:
+			if is_far_tree:
+				_set_range(mmi, fd, 0.0, m)
+			elif key.begins_with("tree") and key.ends_with("_lod"):
+				_set_range(mmi, td if near else 0.0, fd, m)
+			elif not near:
 				continue
-			if is_block:
+			elif is_block:
 				if lod_mesh:
 					mmi.visibility_parent = mmi.get_path_to(lod_mesh)
-			elif key.begins_with("tree") and key.ends_with("_lod"):
-				_set_range(mmi, td, 0.0, m)
 			elif key.begins_with("tree"):
 				_set_range(mmi, 0.0, td, m)
 			elif key.begins_with("rock_small"):

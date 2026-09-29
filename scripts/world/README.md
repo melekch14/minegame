@@ -18,9 +18,9 @@ World (world.gd)                 # wires everything; exposes world_center / stre
         ├── Section_i            # N x N sections per detailed chunk (HLOD)
         │   ├── TerrainLOD       # merged voxel mesh (distance / far chunks)
         │   ├── WaterLOD
-        │   ├── Backing          # fills bevel pin-holes between Blender blocks
-        │   ├── grass/dirt/stone/sand/slope/water   # MultiMesh of the real Blender blocks
-        │   ├── tree_* / tree_*_lod                 # MultiMesh trees (full / decimated)
+        │   ├── Backing          # fills bevel pin-holes between Blender blocks; terrain shadow caster
+        │   ├── grass/dirt/stone/sand/slope/water   # MultiMesh of the real Blender blocks (no shadows)
+        │   ├── tree_* / tree_*_lod / tree_*_far    # MultiMesh trees (full / decimated / voxel stand-in)
         │   └── rock_*                              # MultiMesh rocks
         └── Collision            # StaticBody3D (detailed chunks only)
 ```
@@ -71,7 +71,13 @@ so you can save it with `ResourceSaver.save()`.
 The original `.blend` files in `../assets/terrain` are untouched. They are exported to
 `assets/models/*.glb` (1 surface each, with the Blender material index in UV.x, plus
 `material_ids.json`). Also exported: decimated `*_lod.glb` trees for distance, and bottom faces
-removed from blocks (they are never visible). Block pivots are bottom-centre, 2×2×2 m, which
+removed from blocks (they are never visible). The terrain blocks (grass, dirt, stone, sand, slope) are drawn from `assets/models/baked/`: 10-triangle
+boxes made by `tools/blender/bake_blocks.py`
+(`blender -b --python tools/blender/bake_blocks.py`), which bakes each detailed block's normals,
+material index and AO into two small textures. `voxel_ramp.gdshader` still generates the colours per
+instance. Re-run the script whenever a detailed block GLB changes. The `tree_*_far` stand-ins are not exported: at
+load time `WorldAssetLibrary.build_voxel_proxy()` voxelises each `*_lod` tree (~150–280 triangles
+at the default `far_tree_voxel_size`), shown beyond `tree_far_distance`. Block pivots are bottom-centre, 2×2×2 m, which
 matches the 2 m terrain grid. The shaders in `shaders/` rebuild the Blender voxel-noise ramps.
 
 ## Developer tools

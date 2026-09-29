@@ -26,7 +26,7 @@ func _ready() -> void:
 		modifications = WorldModifications.new()
 		modifications.world_seed = config.world_seed
 	modifications.chunk_modified.connect(_on_chunk_modified)
-	if not assets.load_all():
+	if not assets.load_all(config):
 		push_error("World: some Blender assets failed to load; see errors above.")
 	generator.setup(config, modifications)
 	chunk_manager.setup(config, generator, assets, chunks_root)

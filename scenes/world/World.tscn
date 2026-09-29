@@ -62,7 +62,7 @@ light_energy = 1.3
 light_angular_distance = 1.2
 shadow_enabled = true
 shadow_blur = 1.4
-directional_shadow_max_distance = 180.0
+directional_shadow_max_distance = 100.0
 directional_shadow_blend_splits = true
 
 [node name="WorldGenerator" type="Node" parent="."]
